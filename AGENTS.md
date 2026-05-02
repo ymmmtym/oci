@@ -13,7 +13,13 @@ Oracle Cloud Infrastructure (OCI) のリソースをTerraformで管理するプ�
   - Internet Gateway
   - セキュリティリスト: SSH(22), HTTP(80), HTTPS(443)
 - **コンピューティング**: VM.Standard.E2.1.Micro × 2台 (AMD)
-- **ストレージ**: Object Storage Bucket 20GB
+- **ストレージ**: Object Storage Bucket 20GB (上限)
+- **追加可能なリソース**: 
+  - Block Volume (200GB)
+  - フレキシブルロードバランサー (1台)
+  - ネットワークロードバランサー (1台)
+  - Autonomous Database (2インスタンス)
+  - VM.Standard.A1.Flex (キャパシティ要確認)
 
 ### 認証設定
 2つの認証方法をサポート:
@@ -82,6 +88,16 @@ terraform destroy # 削除
    - private_key を複数行で記載している
    - 1行に変換して `\n` でエスケープ
 
+4. **"Out of host capacity" または "Capacity unavailable"**
+   - VM.Standard.A1.Flexインスタンス作成時に発生
+   - ap-osaka-1リージョンでArmインスタンスのキャパシティ不足
+   - 他のリージョン（ap-tokyo-1等）を試すまたはAMDインスタンスに切り替え
+
+5. **"Always Free limit exceeded" または "Resource limit exceeded"**
+   - Always Free枠の制限を超えている
+   - VM.Standard.E2.1.Microは2台のみ、Object Storageは20GBのみなど
+   - AGENTS.mdの制限表を確認し、枠内でリソース管理
+
 ### 確認コマンド
 ```bash
 # Terraform状態確認
@@ -92,16 +108,100 @@ oci compute instance list --compartment-id <compartment-ocid>
 oci bv volume list --compartment-id <compartment-ocid>
 oci lb load-balancer list --compartment-id <compartment-ocid>
 oci network vcn list --compartment-id <compartment-ocid>
+
+# Always Free枠の制限確認（OCI CLI）
+oci limits value list \
+  --service-name compute \
+  --compartment-id <compartment-ocid>
+oci limits value list \
+  --service-name block-storage \
+  --compartment-id <compartment-ocid>
+oci limits value list \
+  --service-name object-storage \
+  --compartment-id <compartment-ocid>
+oci limits value list \
+  --service-name load-balancer \
+  --compartment-id <compartment-ocid>
+
+# 現在のAlways Free枠確認結果（ap-osaka-1リージョン）
+# VM.Standard.A1.Flex: standard-a1-core-count = 4 (OCPU), standard-a1-memory-count = 24 (GB)
+# Block Volume: total-free-storage-gb = 200 (GB), backup-count = 5
+# Object Storage: storage-bytes = 21474836480 (20GB)
+# Load Balancer: lb-flexible-count = 1, lb-flexible-bandwidth-sum = 10 (Mbps)
 ```
 
-## Always Free枠の制限
+## OCI Always Free枠の詳細（2026年5月公式仕様）
 
-| リソース | 利用量 | 無料枠上限 | 状態 |
-|---------|--------|-----------|------|
-| コンピューティング (AMD) | 2 Micro | 2 Micro | ✅ |
-| ブロックボリューム | ~100GB | 200GB | ✅ |
-| Object Storage | 20GB | 20GB | ✅ |
-| データ転送 | - | 10TB/月 | ✅ |
+### コンピューティング
+- **VM.Standard.E2.1.Micro (AMD)**: 
+  - 最大2インスタンス
+  - 1/8 OCPU (バースト可能)
+  - 1GBメモリ
+  - 50 Mbpsインターネット帯域幅
+  - Oracle Linux Cloud Developer 8, Oracle Linux, Ubuntu, CentOS
+  - **制限**: 既に2台使用中 → 追加不可
+
+- **VM.Standard.A1.Flex (Arm)**: 
+  - 最初の3,000 OCPU時間 + 18,000 GBメモリ時間/月
+  - 4 OCPU + 24 GBメモリ相当
+  - Oracle Linux Cloud Developer, Oracle Linux, Ubuntu
+  - Oracle Linux Cloud Developerは8GBメモリ以上が必要
+  - **注意**: ap-osaka-1リージョンではキャパシティ不足の可能性あり
+
+### ストレージ
+- **Block Volume**: 200GB合計容量（boot volumes + block volumes）
+  - 最大5つのバックアップ（boot volumes + block volumes）
+  - **制限**: ホームリージョンのみ作成可能
+  - **注意**: 現在定義されてない → 追加可能
+
+- **Object Storage**: 20GB合計容量（Standard, Infrequent Access, Archive）
+  - 50,000 APIリクエスト/月
+  - **制限**: 既に20GB使用中 → 追加不可
+
+### ネットワーク
+- **VCN**: 最大2VCN
+- **フレキシブルロードバランサー**: 1台（10 Mbps min/max）
+- **ネットワークロードバランサー**: 1台
+- **Outbound Data Transfer**: 10TB/月
+- **Site-to-site VPN**: 最大50 IPSec接続
+
+### データベース
+- **Oracle Autonomous Database**: 2インスタンス（各1 OCPU + 20GB）
+- **Oracle NoSQL Database**: 
+  - 133M読み書き/月
+  - 25GBストレージ/テーブル
+- **Oracle MySQL HeatWave**: 
+  - シングルノードクラスタ
+  - 50GBストレージ + 50GBバックアップ
+
+### 重要ポイント
+- Always Freeリソースは全OCIアカウント（無料/有料）で利用可能
+- コンソールで「Always Free eligible」と表示されるリソースのみ作成可能
+- **ホームリージョン制限**: ほとんどのリソースはホームリージョンのみ作成可能
+- 有料リソースとの混在は可能だが推奨しない
+- サービス制限は「Governance & Administration → Tenancy Management → Limits, Quotas and Usage」で確認可能
+
+## 現在の使用状況とOCI制限確認
+
+| リソース | 利用量 | 無料枠上限 | OCI制限（ap-osaka-1） | 状態 |
+|---------|--------|-----------|----------------------|------|
+| VM.Standard.E2.1.Micro | 2台 | 2台 | インスタンス制限なし | ✅ **上限到達済み** |
+| VM.Standard.A1.Flex (Arm) | 0 | 3,000 OCPU時間/月 | `standard-a1-core-count`: 4<br>`standard-a1-memory-count`: 24 | ✅ **追加可能** |
+| Block Volume | 0GB | 200GB | `total-free-storage-gb`: 200<br>`backup-count`: 5 | ✅ **追加可能** |
+| Object Storage | 20GB | 20GB | `storage-bytes`: 21474836480 (20GB) | ✅ **上限到達済み** |
+| データ転送 | - | 10TB/月 | 未確認 | ✅ **未使用** |
+| フレキシブルロードバランサー | 0台 | 1台 | `lb-flexible-count`: 1<br>`lb-flexible-bandwidth-sum`: 10 Mbps | ✅ **追加可能** |
+| ネットワークロードバランサー | 0台 | 1台 | `lb-10mbps-micro-count`: 0 | ✅ **追加可能？要確認** |
+| Autonomous Database | 0 | 2インスタンス | 未確認 | ✅ **追加可能** |
+
+## VM.Standard.A1.Flexの制限確認結果（2026-05-02 OCI CLI確認）
+OCI CLIの`limits value list`で確認した結果：
+- `standard-a1-core-count`: 4 OCPU（ADレベル）
+- `standard-a1-core-regional-count`: 4 OCPU（リージョンレベル）
+- `standard-a1-memory-count`: 24 GB（ADレベル）
+- `standard-a1-memory-regional-count`: 24 GB（リージョンレベル）
+
+この制限値は**AP-OSAKA-1リージョンでのAlways Free枠**です。**キャパシティ不足の問題**（Terraformでコメント化されている）は別の問題で、制限枠があっても実際にインスタンスを作成できるかは別途確認が必要です。
 
 ## コーディング規約
 
