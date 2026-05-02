@@ -114,3 +114,31 @@ oci network vcn list --compartment-id <compartment-ocid>
 - 段階的な変更を推奨
 - `terraform plan` の出力を確認
 - 複雑な変更はブランチ作成を提案
+
+## 開発フロー（GitHub + GitLab Flow）
+
+このプロジェクトでは、変更の可視化・検証・承認を確実に行うため、**GitHub を利用した軽量 GitLab Flow** を採用します。  
+`main` ブランチは常に本番環境（OCI Always Free）に直接適用可能な状態を保ち、すべての変更は Pull Request（PR）経由でマージされます。
+
+### ブランチ戦略
+
+| ブランチ名 | 用途 | 命名例 | マージ先 |
+|------------|------|---------|------------|
+| `main` | ✅ **本番環境に反映される唯一の信頼済みブランチ**<br>→ `terraform apply` はこのブランチから実行<br>→ 直接 push は禁止（保護ブランチ推奨） | `main` | — |
+| `feature/xxx` | ✅ 新規リソース追加（例：Load Balancer, Autonomous DB）<br>→ Terraform の `.tf` ファイル追加／変更 | `feature/lb`, `feature/adb` | `main` |
+| `issue/xxx` | ✅ 既存の問題対応（例：`.auto.tfvars` のエスケープ修正、セキュリティリストのポート追加） | `issue/1`, `issue/ssh-key-path` | `main` |
+
+### PR（Pull Request）運用ルール
+
+- ✅ **`terraform plan` の出力は必須**：<br>　PR 作成前に `terraform plan -out=plan-xxx.tfplan` を実行し、ファイルを添付するか、`terraform show plan-xxx.tfplan` の出力を PR 説明欄に記載してください。
+- ✅ **タイトルは Conventional Commits 準拠**：<br>　`feat(lb): Add public load balancer (Free Tier)` や `fix(tfvars): Escape newlines in private_key...` のように、`feat()` / `fix()` で始めてください。
+- ✅ **説明欄には影響範囲を明記**：<br>　例：`✅ Free Tier 制限内（LB: 1台）`、`⚠️ この変更は `terraform apply` 実行後に本番OCIに即時反映されます`。
+- ⚠️ **`main` へのマージ前には必ず確認**：<br>　`AGENTS.md` の「Terraform操作ルール」に従い、ユーザーによる `terraform plan` 内容の確認と同意を得てからマージしてください。
+
+### GitHub 設定推奨（管理者向け）
+
+- `main` ブランチを **Branch Protection Rules** で保護：
+  - ✅ `Require pull request reviews before merging`（最低1名）
+  - ✅ `Require status checks to pass before merging`（CIで `terraform validate` を設定可能）
+  - ✅ `Include administrators`（管理者もルール適用）
+  - ✅ `Require linear history`
