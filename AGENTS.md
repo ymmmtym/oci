@@ -104,24 +104,16 @@ terraform destroy # 削除
 terraform show
 
 # OCI CLI でリソース確認
-oci compute instance list --compartment-id <compartment-ocid>
-oci bv volume list --compartment-id <compartment-ocid>
-oci lb load-balancer list --compartment-id <compartment-ocid>
-oci network vcn list --compartment-id <compartment-ocid>
+oci compute instance list
+oci bv volume list
+oci lb load-balancer list
+oci network vcn list
 
 # Always Free枠の制限確認（OCI CLI）
-oci limits value list \
-  --service-name compute \
-  --compartment-id <compartment-ocid>
-oci limits value list \
-  --service-name block-storage \
-  --compartment-id <compartment-ocid>
-oci limits value list \
-  --service-name object-storage \
-  --compartment-id <compartment-ocid>
-oci limits value list \
-  --service-name load-balancer \
-  --compartment-id <compartment-ocid>
+oci limits value list --service-name compute
+oci limits value list --service-name block-storage
+oci limits value list --service-name object-storage
+oci limits value list --service-name load-balancer
 
 # 現在のAlways Free枠確認結果（ap-osaka-1リージョン）
 # VM.Standard.A1.Flex: standard-a1-core-count = 4 (OCPU), standard-a1-memory-count = 24 (GB)
