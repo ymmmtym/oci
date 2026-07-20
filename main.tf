@@ -1,19 +1,3 @@
-terraform {
-  cloud {
-    organization = "yumenomatayume"
-    workspaces {
-      name = "oci"
-    }
-  }
-
-  required_providers {
-    oci = {
-      source = "oracle/oci"
-      version = "5.30.0"
-    }
-  }
-}
-
 provider "oci" {
   tenancy_ocid          = var.tenancy_ocid
   user_ocid             = var.user_ocid
@@ -186,19 +170,17 @@ output "instance_public_ips" {
   value = oci_core_instance.free_tier_micro[*].public_ip
 }
 
-# Autonomous Database Lite (Always Free - 1 OCPU + 20GB)
+# Autonomous Database Lite (Always Free - 1 ECPU + 20GB)
 resource "oci_database_autonomous_database" "free_tier_adb" {
   compartment_id             = var.tenancy_ocid
   db_name                    = "freetieradb"
   admin_password             = var.adb_admin_password
-  cpu_core_count             = 1
+  compute_model              = "ECPU"
+  compute_count              = 1
   data_storage_size_in_tbs   = 1
   db_workload                = "OLTP"
   is_free_tier               = true
   display_name               = "free-tier-adb-lite"
-
-  # ADB Lite requires 1 OCPU and 20GB storage in free tier
-  # The actual values are enforced by OCI, not the terraform config
 }
 
 output "adb_connection_strings" {
