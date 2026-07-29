@@ -20,7 +20,11 @@ private_key  = "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\
 
 ### 2. デプロイ
 
+このプロジェクトは **Terraform Cloud**（organization: `yumenomatayume`, workspace: `oci`）をバックエンドとして使用しています。
+初回は `terraform login` を実行して API Token を設定してください。
+
 ```bash
+terraform login
 terraform init
 terraform plan
 terraform apply
@@ -28,16 +32,25 @@ terraform apply
 
 ### 3. 接続
 
+**Compute Instance:**
 ```bash
 terraform output instance_public_ips
 ssh opc@<public-ip>
 ```
+
+**Autonomous Database:**
+```bash
+terraform output adb_connection_strings
+```
+
+管理者パスワードは `adb_admin_password` 変数で設定します。デフォルト値を使用せず、`.auto.tfvars` で必ず変更してください。
 
 ## 構成
 
 - **VM.Standard.E2.1.Micro** × 2台 (AMD)
 - **VCN**: 10.0.0.0/16
 - **Object Storage**: 20GB
+- **Autonomous Database (ADB) Lite**: Always Free, 1 ECPU, 20GB
 
 詳細は `AGENTS.md` を参照。
 
