@@ -36,6 +36,8 @@ resource "oci_core_subnet" "private_subnet" {
   display_name        = "private-subnet"
   compartment_id      = var.tenancy_ocid
   vcn_id              = oci_core_vcn.free_tier_vcn.id
+  route_table_id      = oci_core_route_table.private_rt.id
+  security_list_ids   = [oci_core_security_list.private_sl.id]
   prohibit_public_ip_on_vnic = true
 }
 
@@ -56,6 +58,13 @@ resource "oci_core_route_table" "public_rt" {
     destination       = "0.0.0.0/0"
     network_entity_id = oci_core_internet_gateway.igw.id
   }
+}
+
+# ルートテーブル - プライベート
+resource "oci_core_route_table" "private_rt" {
+  compartment_id = var.tenancy_ocid
+  vcn_id         = oci_core_vcn.free_tier_vcn.id
+  display_name   = "private-rt"
 }
 
 # セキュリティグループ - パブリック
