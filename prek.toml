@@ -1,0 +1,5 @@
+[pre-commit]
+hooks = [
+  { id = "terraform_fmt", repo = "antonbabenko/pre-commit-terraform" },
+  { id = "terraform_validate", repo = "antonbabenko/pre-commit-terraform" },
+]
