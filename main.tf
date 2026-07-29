@@ -11,6 +11,15 @@ data "oci_identity_availability_domains" "ad" {
     compartment_id = var.tenancy_ocid
 }
 
+data "oci_core_images" "os_image" {
+  compartment_id           = var.tenancy_ocid
+  operating_system         = "Canonical Ubuntu"
+  operating_system_version = "22.04"
+  shape                    = "VM.Standard.E2.1.Micro"
+  sort_by                  = "TIMECREATED"
+  sort_order               = "DESC"
+}
+
 # VCNの作成
 resource "oci_core_vcn" "free_tier_vcn" {
   cidr_block     = "10.0.0.0/16"
@@ -159,7 +168,7 @@ resource "oci_core_instance" "free_tier_micro" {
 
   source_details {
     source_type = "image"
-    source_id   = "ocid1.image.oc1.ap-osaka-1.aaaaaaaayfht7uc4cx7tqjtjtdkbo6n7oyu2m2qtummtwb5c57co7v2uvzia"
+    source_id   = data.oci_core_images.os_image.images[0].id
   }
 
   metadata = {
@@ -190,7 +199,17 @@ output "adb_connection_strings" {
 }
 
 # Ampere A1 Instance (Always Free - 4 OCPU, 24GB RAM)
-# NOTE: ap-osaka-1リージョンではキャパシティ不足のため作成できず (2026-04-30)
+# NOTE: キャパシティ不足のため作成不可 (2026-04-30)
+# 使用時は `shape = "VM.Standard.A1.Flex"` 用の別データソースが必要
+# data "oci_core_images" "ampere_os_image" {
+#   compartment_id           = var.tenancy_ocid
+#   operating_system         = "Canonical Ubuntu"
+#   operating_system_version = "22.04"
+#   shape                    = "VM.Standard.A1.Flex"
+#   sort_by                  = "TIMECREATED"
+#   sort_order               = "DESC"
+# }
+#
 # resource "oci_core_instance" "free_tier_ampere" {
 #   availability_domain = data.oci_identity_availability_domains.ad.availability_domains[0].name
 #   compartment_id      = var.tenancy_ocid
@@ -209,7 +228,7 @@ output "adb_connection_strings" {
 #
 #   source_details {
 #     source_type = "image"
-#     source_id   = "ocid1.image.oc1.ap-osaka-1.aaaaaaaa7g7qc6hssaqwodi5saxziwpdn3qwm35ulvbjch2qniiusiq76yaq"
+#     source_id   = data.oci_core_images.ampere_os_image.images[0].id
 #   }
 #
 #   metadata = {
