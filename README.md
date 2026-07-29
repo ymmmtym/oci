@@ -20,7 +20,11 @@ private_key  = "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\
 
 ### 2. デプロイ
 
+このプロジェクトは **Terraform Cloud**（organization: `yumenomatayume`, workspace: `oci`）をバックエンドとして使用しています。
+初回は `terraform login` を実行して API Token を設定してください。
+
 ```bash
+terraform login
 terraform init
 terraform plan
 terraform apply
