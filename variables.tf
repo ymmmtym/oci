@@ -29,6 +29,5 @@ variable "adb_admin_password" {
   description = "Autonomous Database admin password (12-30 chars, must include 1 uppercase, 1 lowercase, 1 number, 1 special char)"
   type        = string
   sensitive   = true
-  default     = "YourSecureP@ssw0rd123!"
 }
 
