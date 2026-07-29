@@ -1,14 +1,14 @@
 provider "oci" {
-  tenancy_ocid          = var.tenancy_ocid
-  user_ocid             = var.user_ocid
-  fingerprint           = var.fingerprint
-  private_key           = var.private_key
-  region                = var.region
+  tenancy_ocid = var.tenancy_ocid
+  user_ocid    = var.user_ocid
+  fingerprint  = var.fingerprint
+  private_key  = var.private_key
+  region       = var.region
 }
 
 data "oci_identity_availability_domains" "ad" {
-    #Required
-    compartment_id = var.tenancy_ocid
+  #Required
+  compartment_id = var.tenancy_ocid
 }
 
 data "oci_core_images" "os_image" {
@@ -30,23 +30,23 @@ resource "oci_core_vcn" "free_tier_vcn" {
 
 # パブリックサブネットの作成
 resource "oci_core_subnet" "public_subnet" {
-  cidr_block          = "10.0.1.0/24"
-  display_name        = "public-subnet"
-  compartment_id      = var.tenancy_ocid
-  vcn_id              = oci_core_vcn.free_tier_vcn.id
-  route_table_id      = oci_core_route_table.public_rt.id
-  security_list_ids   = [oci_core_security_list.public_sl.id]
+  cidr_block                 = "10.0.1.0/24"
+  display_name               = "public-subnet"
+  compartment_id             = var.tenancy_ocid
+  vcn_id                     = oci_core_vcn.free_tier_vcn.id
+  route_table_id             = oci_core_route_table.public_rt.id
+  security_list_ids          = [oci_core_security_list.public_sl.id]
   prohibit_public_ip_on_vnic = false
 }
 
 # プライベートサブネットの作成
 resource "oci_core_subnet" "private_subnet" {
-  cidr_block          = "10.0.2.0/24"
-  display_name        = "private-subnet"
-  compartment_id      = var.tenancy_ocid
-  vcn_id              = oci_core_vcn.free_tier_vcn.id
-  route_table_id      = oci_core_route_table.private_rt.id
-  security_list_ids   = [oci_core_security_list.private_sl.id]
+  cidr_block                 = "10.0.2.0/24"
+  display_name               = "private-subnet"
+  compartment_id             = var.tenancy_ocid
+  vcn_id                     = oci_core_vcn.free_tier_vcn.id
+  route_table_id             = oci_core_route_table.private_rt.id
+  security_list_ids          = [oci_core_security_list.private_sl.id]
   prohibit_public_ip_on_vnic = true
 }
 
@@ -190,14 +190,14 @@ output "instance_public_ips" {
 
 # Autonomous Database Lite (Always Free - 1 ECPU + 20GB)
 resource "oci_database_autonomous_database" "free_tier_adb" {
-  compartment_id             = var.tenancy_ocid
-  db_name                    = "freetieradb"
-  admin_password             = var.adb_admin_password
-  compute_model              = "ECPU"
-  compute_count              = 1
-  db_workload                = "OLTP"
-  is_free_tier               = true
-  display_name               = "free-tier-adb-lite"
+  compartment_id = var.tenancy_ocid
+  db_name        = "freetieradb"
+  admin_password = var.adb_admin_password
+  compute_model  = "ECPU"
+  compute_count  = 1
+  db_workload    = "OLTP"
+  is_free_tier   = true
+  display_name   = "free-tier-adb-lite"
 }
 
 output "adb_connection_strings" {
