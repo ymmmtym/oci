@@ -187,7 +187,6 @@ resource "oci_database_autonomous_database" "free_tier_adb" {
   admin_password             = var.adb_admin_password
   compute_model              = "ECPU"
   compute_count              = 1
-  data_storage_size_in_tbs   = 1
   db_workload                = "OLTP"
   is_free_tier               = true
   display_name               = "free-tier-adb-lite"
