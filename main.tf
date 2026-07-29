@@ -36,6 +36,7 @@ resource "oci_core_subnet" "private_subnet" {
   display_name        = "private-subnet"
   compartment_id      = var.tenancy_ocid
   vcn_id              = oci_core_vcn.free_tier_vcn.id
+  security_list_ids   = [oci_core_security_list.private_sl.id]
   prohibit_public_ip_on_vnic = true
 }
 
