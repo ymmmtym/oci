@@ -146,7 +146,7 @@ output "bucket_name" {
 # Compute Instances (Always Free - VM.Standard.E2.1.Micro x2)
 resource "oci_core_instance" "free_tier_micro" {
   count               = 2
-  availability_domain = data.oci_identity_availability_domains.ad.availability_domains[0].name
+  availability_domain = data.oci_identity_availability_domains.ad.availability_domains[count.index % length(data.oci_identity_availability_domains.ad.availability_domains)].name
   compartment_id      = var.tenancy_ocid
   display_name        = "free-tier-micro-${count.index + 1}"
   shape               = "VM.Standard.E2.1.Micro"
