@@ -162,6 +162,10 @@ resource "oci_objectstorage_bucket" "free_tier_bucket" {
   name           = "free-tier-bucket"
   access_type    = "NoPublicAccess"
   freeform_tags  = local.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 output "list_ads" {
@@ -215,6 +219,10 @@ resource "oci_database_autonomous_database" "free_tier_adb" {
   is_free_tier   = true
   display_name   = "free-tier-adb-lite"
   freeform_tags  = local.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 output "adb_connection_strings" {
