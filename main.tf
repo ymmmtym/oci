@@ -6,6 +6,12 @@ provider "oci" {
   region       = var.region
 }
 
+locals {
+  tags = {
+    "managed-by" = "terraform"
+  }
+}
+
 data "oci_identity_availability_domains" "ad" {
   #Required
   compartment_id = var.tenancy_ocid
@@ -26,6 +32,7 @@ resource "oci_core_vcn" "free_tier_vcn" {
   compartment_id = var.tenancy_ocid
   display_name   = "free-tier-vcn"
   dns_label      = "freetier"
+  freeform_tags  = local.tags
 }
 
 # パブリックサブネットの作成
@@ -37,6 +44,7 @@ resource "oci_core_subnet" "public_subnet" {
   route_table_id             = oci_core_route_table.public_rt.id
   security_list_ids          = [oci_core_security_list.public_sl.id]
   prohibit_public_ip_on_vnic = false
+  freeform_tags              = local.tags
 }
 
 # プライベートサブネットの作成
@@ -48,6 +56,7 @@ resource "oci_core_subnet" "private_subnet" {
   route_table_id             = oci_core_route_table.private_rt.id
   security_list_ids          = [oci_core_security_list.private_sl.id]
   prohibit_public_ip_on_vnic = true
+  freeform_tags              = local.tags
 }
 
 # Internet Gatewayの作成
@@ -55,6 +64,7 @@ resource "oci_core_internet_gateway" "igw" {
   compartment_id = var.tenancy_ocid
   display_name   = "free-tier-igw"
   vcn_id         = oci_core_vcn.free_tier_vcn.id
+  freeform_tags  = local.tags
 }
 
 # ルートテーブル - パブリック
@@ -62,6 +72,7 @@ resource "oci_core_route_table" "public_rt" {
   compartment_id = var.tenancy_ocid
   vcn_id         = oci_core_vcn.free_tier_vcn.id
   display_name   = "public-rt"
+  freeform_tags  = local.tags
 
   route_rules {
     destination       = "0.0.0.0/0"
@@ -74,6 +85,7 @@ resource "oci_core_route_table" "private_rt" {
   compartment_id = var.tenancy_ocid
   vcn_id         = oci_core_vcn.free_tier_vcn.id
   display_name   = "private-rt"
+  freeform_tags  = local.tags
 }
 
 # セキュリティグループ - パブリック
@@ -81,6 +93,7 @@ resource "oci_core_security_list" "public_sl" {
   compartment_id = var.tenancy_ocid
   display_name   = "public-security-list"
   vcn_id         = oci_core_vcn.free_tier_vcn.id
+  freeform_tags  = local.tags
 
   egress_security_rules {
     destination = "0.0.0.0/0"
@@ -120,6 +133,7 @@ resource "oci_core_security_list" "private_sl" {
   compartment_id = var.tenancy_ocid
   display_name   = "private-security-list"
   vcn_id         = oci_core_vcn.free_tier_vcn.id
+  freeform_tags  = local.tags
 
   egress_security_rules {
     destination = "0.0.0.0/0"
@@ -147,6 +161,7 @@ resource "oci_objectstorage_bucket" "free_tier_bucket" {
   namespace      = data.oci_objectstorage_namespace.ns.namespace
   name           = "free-tier-bucket"
   access_type    = "NoPublicAccess"
+  freeform_tags  = local.tags
 
   lifecycle {
     prevent_destroy = true
@@ -172,6 +187,7 @@ resource "oci_core_instance" "free_tier_micro" {
   compartment_id      = var.tenancy_ocid
   display_name        = "free-tier-micro-${count.index + 1}"
   shape               = "VM.Standard.E2.1.Micro"
+  freeform_tags       = local.tags
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.public_subnet.id
@@ -202,6 +218,7 @@ resource "oci_database_autonomous_database" "free_tier_adb" {
   db_workload    = "OLTP"
   is_free_tier   = true
   display_name   = "free-tier-adb-lite"
+  freeform_tags  = local.tags
 
   lifecycle {
     prevent_destroy = true
