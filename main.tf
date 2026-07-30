@@ -147,6 +147,10 @@ resource "oci_objectstorage_bucket" "free_tier_bucket" {
   namespace      = data.oci_objectstorage_namespace.ns.namespace
   name           = "free-tier-bucket"
   access_type    = "NoPublicAccess"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 output "list_ads" {
@@ -198,6 +202,10 @@ resource "oci_database_autonomous_database" "free_tier_adb" {
   db_workload    = "OLTP"
   is_free_tier   = true
   display_name   = "free-tier-adb-lite"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 output "adb_connection_strings" {
