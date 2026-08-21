@@ -230,8 +230,9 @@ output "adb_connection_strings" {
   sensitive = true
 }
 
-# Ampere A1 Instance (Always Free - 4 OCPU, 24GB RAM)
-# NOTE: キャパシティ不足のため作成不可 (2026-04-30)
+# Ampere A1 Instance (Always Free - 2 OCPU, 12GB RAM)
+# NOTE: テナントの A1 サービス制限が 2 OCPU / 12 GB のため半分スペックで設定 (2026-08-22)
+#       ap-osaka-1 は "Out of host capacity" が継続中のため作成は保留中
 # 使用時は `shape = "VM.Standard.A1.Flex"` 用の別データソースが必要
 # data "oci_core_images" "ampere_os_image" {
 #   compartment_id           = var.tenancy_ocid
@@ -249,8 +250,8 @@ output "adb_connection_strings" {
 #   shape               = "VM.Standard.A1.Flex"
 #
 #   shape_config {
-#     ocpus         = 4
-#     memory_in_gbs = 24
+#     ocpus         = 2
+#     memory_in_gbs = 12
 #   }
 #
 #   create_vnic_details {
