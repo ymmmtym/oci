@@ -31,3 +31,9 @@ variable "adb_admin_password" {
   sensitive   = true
 }
 
+variable "ubuntu_image_ocid" {
+  description = "Pinned OCID of Canonical Ubuntu 22.04 image for VM.Standard.E2.1.Micro in ap-osaka-1. Prevents instance recreation when OCI publishes new images. Bump intentionally via PR when upgrading."
+  type        = string
+  default     = "ocid1.image.oc1.ap-osaka-1.aaaaaaaaft5c7or3dimnzqraj2izb5xmswuofwbuhwmnhbpw7pubiwcv6wlq" # Canonical-Ubuntu-22.04-2026.06.29-0
+}
+
