@@ -17,15 +17,6 @@ data "oci_identity_availability_domains" "ad" {
   compartment_id = var.tenancy_ocid
 }
 
-data "oci_core_images" "os_image" {
-  compartment_id           = var.tenancy_ocid
-  operating_system         = "Canonical Ubuntu"
-  operating_system_version = "22.04"
-  shape                    = "VM.Standard.E2.1.Micro"
-  sort_by                  = "TIMECREATED"
-  sort_order               = "DESC"
-}
-
 # VCNの作成
 resource "oci_core_vcn" "free_tier_vcn" {
   cidr_block     = "10.0.0.0/16"
@@ -196,7 +187,7 @@ resource "oci_core_instance" "free_tier_micro" {
 
   source_details {
     source_type = "image"
-    source_id   = data.oci_core_images.os_image.images[0].id
+    source_id   = var.ubuntu_image_ocid
   }
 
   metadata = {
