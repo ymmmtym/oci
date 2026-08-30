@@ -22,7 +22,7 @@ resource "oci_core_vcn" "vcn" {
   cidr_block     = "10.0.0.0/16"
   compartment_id = var.tenancy_ocid
   display_name   = "vcn"
-  dns_label      = "freetier"
+  dns_label      = "vcn"
   freeform_tags  = local.tags
 }
 
