@@ -18,10 +18,10 @@ data "oci_identity_availability_domains" "ad" {
 }
 
 # VCNの作成
-resource "oci_core_vcn" "free_tier_vcn" {
+resource "oci_core_vcn" "vcn" {
   cidr_block     = "10.0.0.0/16"
   compartment_id = var.tenancy_ocid
-  display_name   = "free-tier-vcn"
+  display_name   = "vcn"
   dns_label      = "freetier"
   freeform_tags  = local.tags
 }
@@ -31,7 +31,7 @@ resource "oci_core_subnet" "public_subnet" {
   cidr_block                 = "10.0.1.0/24"
   display_name               = "public-subnet"
   compartment_id             = var.tenancy_ocid
-  vcn_id                     = oci_core_vcn.free_tier_vcn.id
+  vcn_id                     = oci_core_vcn.vcn.id
   route_table_id             = oci_core_route_table.public_rt.id
   security_list_ids          = [oci_core_security_list.public_sl.id]
   prohibit_public_ip_on_vnic = false
@@ -43,7 +43,7 @@ resource "oci_core_subnet" "private_subnet" {
   cidr_block                 = "10.0.2.0/24"
   display_name               = "private-subnet"
   compartment_id             = var.tenancy_ocid
-  vcn_id                     = oci_core_vcn.free_tier_vcn.id
+  vcn_id                     = oci_core_vcn.vcn.id
   route_table_id             = oci_core_route_table.private_rt.id
   security_list_ids          = [oci_core_security_list.private_sl.id]
   prohibit_public_ip_on_vnic = true
@@ -53,15 +53,15 @@ resource "oci_core_subnet" "private_subnet" {
 # Internet Gatewayの作成
 resource "oci_core_internet_gateway" "igw" {
   compartment_id = var.tenancy_ocid
-  display_name   = "free-tier-igw"
-  vcn_id         = oci_core_vcn.free_tier_vcn.id
+  display_name   = "igw"
+  vcn_id         = oci_core_vcn.vcn.id
   freeform_tags  = local.tags
 }
 
 # ルートテーブル - パブリック
 resource "oci_core_route_table" "public_rt" {
   compartment_id = var.tenancy_ocid
-  vcn_id         = oci_core_vcn.free_tier_vcn.id
+  vcn_id         = oci_core_vcn.vcn.id
   display_name   = "public-rt"
   freeform_tags  = local.tags
 
@@ -74,7 +74,7 @@ resource "oci_core_route_table" "public_rt" {
 # ルートテーブル - プライベート
 resource "oci_core_route_table" "private_rt" {
   compartment_id = var.tenancy_ocid
-  vcn_id         = oci_core_vcn.free_tier_vcn.id
+  vcn_id         = oci_core_vcn.vcn.id
   display_name   = "private-rt"
   freeform_tags  = local.tags
 }
@@ -83,7 +83,7 @@ resource "oci_core_route_table" "private_rt" {
 resource "oci_core_security_list" "public_sl" {
   compartment_id = var.tenancy_ocid
   display_name   = "public-security-list"
-  vcn_id         = oci_core_vcn.free_tier_vcn.id
+  vcn_id         = oci_core_vcn.vcn.id
   freeform_tags  = local.tags
 
   egress_security_rules {
@@ -123,7 +123,7 @@ resource "oci_core_security_list" "public_sl" {
 resource "oci_core_security_list" "private_sl" {
   compartment_id = var.tenancy_ocid
   display_name   = "private-security-list"
-  vcn_id         = oci_core_vcn.free_tier_vcn.id
+  vcn_id         = oci_core_vcn.vcn.id
   freeform_tags  = local.tags
 
   egress_security_rules {
@@ -147,16 +147,12 @@ data "oci_objectstorage_namespace" "ns" {
 }
 
 # Object Storage Bucket (Always Free - 20GB)
-resource "oci_objectstorage_bucket" "free_tier_bucket" {
+resource "oci_objectstorage_bucket" "bucket" {
   compartment_id = var.tenancy_ocid
   namespace      = data.oci_objectstorage_namespace.ns.namespace
-  name           = "free-tier-bucket"
+  name           = "bucket"
   access_type    = "NoPublicAccess"
   freeform_tags  = local.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 output "list_ads" {
@@ -168,15 +164,15 @@ output "bucket_namespace" {
 }
 
 output "bucket_name" {
-  value = oci_objectstorage_bucket.free_tier_bucket.name
+  value = oci_objectstorage_bucket.bucket.name
 }
 
 # Compute Instances (Always Free - VM.Standard.E2.1.Micro x2)
-resource "oci_core_instance" "free_tier_micro" {
+resource "oci_core_instance" "micro" {
   count               = 2
   availability_domain = data.oci_identity_availability_domains.ad.availability_domains[count.index % length(data.oci_identity_availability_domains.ad.availability_domains)].name
   compartment_id      = var.tenancy_ocid
-  display_name        = "free-tier-micro-${count.index + 1}"
+  display_name        = format("jp-bastion-%02d", count.index + 1)
   shape               = "VM.Standard.E2.1.Micro"
   freeform_tags       = local.tags
 
@@ -196,28 +192,24 @@ resource "oci_core_instance" "free_tier_micro" {
 }
 
 output "instance_public_ips" {
-  value = oci_core_instance.free_tier_micro[*].public_ip
+  value = oci_core_instance.micro[*].public_ip
 }
 
 # Autonomous Database Lite (Always Free - 1 ECPU + 20GB)
-resource "oci_database_autonomous_database" "free_tier_adb" {
+resource "oci_database_autonomous_database" "adb" {
   compartment_id = var.tenancy_ocid
-  db_name        = "freetieradb"
+  db_name        = "adb"
   admin_password = var.adb_admin_password
   compute_model  = "ECPU"
   compute_count  = 1
   db_workload    = "OLTP"
   is_free_tier   = true
-  display_name   = "free-tier-adb-lite"
+  display_name   = "adb-lite"
   freeform_tags  = local.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 output "adb_connection_strings" {
-  value     = oci_database_autonomous_database.free_tier_adb.connection_strings
+  value     = oci_database_autonomous_database.adb.connection_strings
   sensitive = true
 }
 
@@ -231,10 +223,10 @@ output "adb_connection_strings" {
 #   sort_order               = "DESC"
 # }
 # 
-# resource "oci_core_instance" "free_tier_ampere" {
+# resource "oci_core_instance" "ampere" {
 #   availability_domain = data.oci_identity_availability_domains.ad.availability_domains[0].name
 #   compartment_id      = var.tenancy_ocid
-#   display_name        = "free-tier-ampere-a1"
+#   display_name        = "ampere-a1"
 #   shape               = "VM.Standard.A1.Flex"
 # 
 #   shape_config {
@@ -258,5 +250,5 @@ output "adb_connection_strings" {
 # }
 # 
 # output "ampere_public_ip" {
-#   value = oci_core_instance.free_tier_ampere.public_ip
+#   value = oci_core_instance.ampere.public_ip
 # }
