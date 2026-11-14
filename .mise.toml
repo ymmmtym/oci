@@ -1,4 +1,4 @@
 [tools]
-oci = "3.90.0"
+oci = "3.96.2"
 prek = "0.4.11"
 terraform = "1.15.8"
