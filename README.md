@@ -60,6 +60,8 @@ jp-bastion-01.public.vcn.oraclevcn.com
 
 `terraform output instance_fqdns` で確認できます。
 
+メモリ 1GB のため、cloud-init の `user_data` で 2GB のスワップファイル（`/swap`）を作成します。
+
 詳細は `AGENTS.md` を参照。
 
 ## ライセンス

@@ -191,6 +191,17 @@ resource "oci_core_instance" "micro" {
 
   metadata = {
     ssh_authorized_keys = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC/TAlBnd+IVdqIanbmgMppxclaWTg8dw0ncXnNMqjAxaAHDF/MsEjSJlG9CtfFzqouNZqNh5wd71lZ1e+cBbww1FKGPnNmOSReJq49Mjo6tyZwnUOUyiKMpChQlYJSRsX92ry9DHlF4KKX4tdP82pShEkSR7pxj+14cFAMs+IOB8oQi8KY8nPRuIGCIXZXiEjfP4QaSA1iXO2dhR2yvw93c5mIi4hASJR0SlqI+iy51nYc9fWFEjn64Ms0J08hxXslj/kjaBfrF46uoduA6se9wKNJ90m4s3+pB1Fcpd42S6JGOYQqY+gaw+fGPJmmK0hbH7yXIbePgAkv9LJhy7laoMt7Q6cdmEOzYPvvshOp1OpOHmqNN/K2Kvwco5/pnmgI9RHNdgulJrP//qcz+q3Uh7u++q+MstaWD5dBuqiSM5QWwDMvqiYysn0J9Jhh43wVCfg9F6DFhg8rSvavuGW4xaaQmSFc7FgY4RWfE+D5LsA3p2IYLg9XfQJSuxAOJEPgmFs7swmiH5pkgi69pWIJ5U00Ul1MrbfET4ErzECDa/603K2nzpGPiH+ZsimWA6NXZAR/AgtWB9OCcYJBR5BiQFjS8oLwjy30MHio5OLLzq5qg69Idkl5frzowkhHyJHJLCNeu0kmsrTBpXEUUqJOtC7k6aQabl+5+Tu6z80x/w== yukihisa@mac-mini.yumenomatayume.home"
+
+    user_data = base64encode(join("\n", [
+      "#cloud-config",
+      yamlencode({
+        swap = {
+          filename = "/swap"
+          size     = 2147483648
+          maxsize  = 2147483648
+        }
+      })
+    ]))
   }
 }
 
