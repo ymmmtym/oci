@@ -37,3 +37,8 @@ variable "ubuntu_image_ocid" {
   default     = "ocid1.image.oc1.ap-osaka-1.aaaaaaaaxjdpvxyc3i5lle36mhkbcamarv4tsu2vue3arafpjd5zroyogcmq" # Canonical-Ubuntu-26.04-Minimal-2026.11.05-0
 }
 
+variable "alert_email" {
+  description = "Alarm notifications の購読先メールアドレス。空の場合はアラーム・トピックを作成しない"
+  type        = string
+  default     = ""
+}

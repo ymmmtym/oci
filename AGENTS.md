@@ -14,7 +14,7 @@ private_key  = "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\
 ```
 `private_key` must use `\n` escapes, not literal newlines. Env var fallback: `TF_VAR_tenancy_ocid`, `TF_VAR_user_ocid`, `TF_VAR_fingerprint`, `TF_VAR_region`, `TF_VAR_private_key`.
 
-Required vars: `tenancy_ocid`, `user_ocid`, `fingerprint`, `region` (default `ap-osaka-1`), `private_key`, `adb_admin_password`.
+Required vars: `tenancy_ocid`, `user_ocid`, `fingerprint`, `region` (default `ap-osaka-1`), `private_key`, `adb_admin_password`. Optional: `alert_email` (Monitoring alarm subscription; empty = no alarm resources).
 
 ## Tools
 
@@ -27,6 +27,7 @@ Managed via `mise` (`mise.toml`): `oci` and `terraform` (both `latest`).
 | VM.Standard.E2.1.Micro × 2 | ✅ Deployed (max 2) |
 | Object Storage 20GB | ✅ Deployed (max 20GB) |
 | Autonomous Database | ✅ Deployed (default password in `variables.tf`) |
+| Monitoring alarm + ONS email topic | ✅ (only when `alert_email` is set) |
 | VM.Standard.A1.Flex (Arm) | ❌ Commented out — capacity issues in ap-osaka-1 |
 | Block Volume, Load Balancer | Not created yet |
 

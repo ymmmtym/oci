@@ -64,6 +64,45 @@ jp-bastion-01.public.vcn.oraclevcn.com
 
 詳細は `AGENTS.md` を参照。
 
+## 死活監視（OCI Monitoring）
+
+`monitoring.tf` で OCI Monitoring のアラームと Notifications のトピック・購読を管理します。Qiita の[手順](https://qiita.com/yosakata/items/da0fff6b96297b91078b)をそのまま Terraform 化したものです。
+
+| コンソール操作 | Terraform リソース |
+|---|---|
+| トピック（通知先）の作成 | `oci_ons_notification_topic.alarm` |
+| メールアドレスの登録 | `oci_ons_subscription.alarm_email` |
+| アラーム定義の作成 | `oci_monitoring_alarm.instance_down` |
+
+### 有効化
+
+`alert_email` に通知先メールアドレスを設定すると、トピック・購読・アラームが作成されます。未設定（空文字）の場合は何も作られません。
+
+```hcl
+# .auto.tfvars
+alert_email = "you@example.com"
+```
+
+```bash
+terraform apply
+```
+
+### メール購読の確認（手動）
+
+`oci_ons_subscription` は作成直後 `PENDING` 状態です。指定したアドレスに届く確認メールの **Confirm subscription** をクリックするまで通知は配信されません。Terraform では代行できないため手動で対応してください。
+
+### アラームの条件
+
+`jp-bastion-01` / `jp-bastion-02` それぞれについて、`oci_computeagent` の `CpuUtilization` が 5 分間まったく届かなくなったら `CRITICAL` で発報します。
+
+```
+CpuUtilization[1m]{resourceId = "<instance OCID>"}.absent(5m)
+```
+
+- `absent(5m)` は「メトリクスが 5 分間欠損」を意味します（`absent()` のデフォルトは 2 時間なので明示的に短縮）
+- インスタンスを正常に停止した場合もメトリクスが止まるため発報します。計画停止のときはアラームを一時無効化してください
+- 通知は `PT4H` ごとに再送されます
+
 ## ライセンス
 
 MIT
