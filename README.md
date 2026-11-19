@@ -102,6 +102,7 @@ CpuUtilization[1m]{resourceId = "<instance OCID>"}.absent(5m)
 - `absent(5m)` は「メトリクスが 5 分間欠損」を意味します（`absent()` のデフォルトは 2 時間なので明示的に短縮）
 - インスタンスを正常に停止した場合もメトリクスが止まるため発報します。計画停止のときはアラームを一時無効化してください
 - 通知は `PT4H` ごとに再送されます
+- `CpuUtilization` は Oracle Cloud Agent の **Compute Instance Monitoring** プラグインが出力します。プラグインが無効・停止しているとメトリクスが届かず常時発報になるため、コンソールの「Oracle Cloud Agent」タブで `RUNNING` になっているか確認してください
 
 ## ライセンス
 
