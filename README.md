@@ -48,9 +48,19 @@ terraform output adb_connection_strings
 ## 構成
 
 - **VM.Standard.E2.1.Micro** × 2台 (AMD)
-- **VCN**: 10.0.0.0/16
+- **VCN**: 10.0.0.0/16（DNSラベル `vcn`、サブネットは `public` / `private`）
 - **Object Storage**: 20GB
 - **Autonomous Database (ADB) Lite**: Always Free, 1 ECPU, 20GB
+
+インスタンスには VCN Resolver の FQDN が付きます（VCN 内からのみ解決可能）。
+
+```
+jp-bastion-01.public.vcn.oraclevcn.com
+```
+
+`terraform output instance_fqdns` で確認できます。
+
+メモリ 1GB のため、cloud-init の `user_data` で 2GB のスワップファイル（`/swap`）を作成します。
 
 詳細は `AGENTS.md` を参照。
 

@@ -30,7 +30,9 @@ Managed via `mise` (`mise.toml`): `oci` and `terraform` (both `latest`).
 | VM.Standard.A1.Flex (Arm) | ❌ Commented out — capacity issues in ap-osaka-1 |
 | Block Volume, Load Balancer | Not created yet |
 
-SSH key is hardcoded in `main.tf:181` metadata. Update there to change.
+SSH key is hardcoded in `main.tf` (`oci_core_instance.micro` metadata). Update there to change.
+
+Instance FQDNs come from the VCN Resolver (`<hostname>.<subnet dns_label>.<vcn dns_label>.oraclevcn.com`). `dns_label` is ForceNew on both `oci_core_vcn` and `oci_core_subnet`, so changing it recreates the subnets and both instances.
 
 ## Workflow
 
