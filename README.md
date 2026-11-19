@@ -64,6 +64,16 @@ jp-bastion-01.public.vcn.oraclevcn.com
 
 詳細は `AGENTS.md` を参照。
 
+## バックアップ
+
+`jp-bastion-01` のブートボリュームのみ、日次で 5 世代保持するバックアップポリシーを適用しています（`backup.tf`）。
+
+- スケジュール: 毎日 18:00 UTC（JST 03:00）、増分バックアップ
+- 保持: 4 日 18 時間（= 常時 5 世代）
+- Always Free のボリュームバックアップはテナント全体で同時 5 個までのため、6 個目が作られないよう保持期間を 5 日より少し短くしています。`jp-bastion-02` にも適用する場合は、保持世代数を減らすか、既存バックアップを削除してください。
+
+ポリシーはユーザー定義（`oci_core_volume_backup_policy`）で作成し、`oci_core_volume_backup_policy_assignment` でブートボリュームに割り当てます。
+
 ## ライセンス
 
 MIT
