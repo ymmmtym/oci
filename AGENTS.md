@@ -28,6 +28,7 @@ Managed via `mise` (`mise.toml`): `oci` and `terraform` (both `latest`).
 | Object Storage 20GB | ✅ Deployed (max 20GB) |
 | Autonomous Database | ✅ Deployed (default password in `variables.tf`) |
 | VM.Standard.A1.Flex (Arm) | ❌ Commented out — capacity issues in ap-osaka-1 |
+| Volume backup policy (daily, 5 generations) | ✅ jp-bastion-01 boot volume only |
 | Block Volume, Load Balancer | Not created yet |
 
 SSH key is hardcoded in `main.tf` (`oci_core_instance.micro` metadata). Update there to change.
