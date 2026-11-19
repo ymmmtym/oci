@@ -104,6 +104,16 @@ CpuUtilization[1m]{resourceId = "<instance OCID>"}.absent(5m)
 - 通知は `PT4H` ごとに再送されます
 - `CpuUtilization` は Oracle Cloud Agent の **Compute Instance Monitoring** プラグインが出力します。プラグインが無効・停止しているとメトリクスが届かず常時発報になるため、コンソールの「Oracle Cloud Agent」タブで `RUNNING` になっているか確認してください
 
+## バックアップ
+
+`jp-bastion-01` のブートボリュームのみ、日次バックアップポリシーを適用しています（`backup.tf`）。
+
+- スケジュール: 毎日 18:00 UTC（JST 03:00）、増分バックアップ
+- 保持: 4 日 18 時間（通常 4〜5 世代でローテーション）
+- Always Free のボリュームバックアップはテナント全体で同時 5 個までのため、6 個目が作られないよう保持期間を 5 日より少し短くしています。`jp-bastion-02` にも適用する場合は、両ボリュームを含むテナント全体のバックアップが合計 5 個以内に収まるよう、保持期間を短縮してください。既存バックアップが枠を消費している場合は、必要に応じて削除してください。
+
+ポリシーはユーザー定義（`oci_core_volume_backup_policy`）で作成し、`oci_core_volume_backup_policy_assignment` でブートボリュームに割り当てます。
+
 ## ライセンス
 
 MIT

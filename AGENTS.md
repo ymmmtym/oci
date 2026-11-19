@@ -29,6 +29,7 @@ Managed via `mise` (`mise.toml`): `oci` and `terraform` (both `latest`).
 | Autonomous Database | ✅ Deployed (default password in `variables.tf`) |
 | Monitoring alarm + ONS email topic | ✅ (only when `alert_email` is set) |
 | VM.Standard.A1.Flex (Arm) | ❌ Commented out — capacity issues in ap-osaka-1 |
+| Volume backup policy (daily, 5 generations) | ✅ jp-bastion-01 boot volume only |
 | Block Volume, Load Balancer | Not created yet |
 
 SSH key is hardcoded in `main.tf` (`oci_core_instance.micro` metadata). Update there to change.
