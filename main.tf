@@ -30,6 +30,7 @@ resource "oci_core_vcn" "vcn" {
 resource "oci_core_subnet" "public_subnet" {
   cidr_block                 = "10.0.1.0/24"
   display_name               = "public-subnet"
+  dns_label                  = "public"
   compartment_id             = var.tenancy_ocid
   vcn_id                     = oci_core_vcn.vcn.id
   route_table_id             = oci_core_route_table.public_rt.id
@@ -42,6 +43,7 @@ resource "oci_core_subnet" "public_subnet" {
 resource "oci_core_subnet" "private_subnet" {
   cidr_block                 = "10.0.2.0/24"
   display_name               = "private-subnet"
+  dns_label                  = "private"
   compartment_id             = var.tenancy_ocid
   vcn_id                     = oci_core_vcn.vcn.id
   route_table_id             = oci_core_route_table.private_rt.id
@@ -179,6 +181,7 @@ resource "oci_core_instance" "micro" {
   create_vnic_details {
     subnet_id        = oci_core_subnet.public_subnet.id
     assign_public_ip = true
+    hostname_label   = format("jp-bastion-%02d", count.index + 1)
   }
 
   source_details {
@@ -193,6 +196,13 @@ resource "oci_core_instance" "micro" {
 
 output "instance_public_ips" {
   value = oci_core_instance.micro[*].public_ip
+}
+
+output "instance_fqdns" {
+  value = [
+    for i in oci_core_instance.micro :
+    format("%s.%s.%s.oraclevcn.com", i.create_vnic_details[0].hostname_label, oci_core_subnet.public_subnet.dns_label, oci_core_vcn.vcn.dns_label)
+  ]
 }
 
 # Autonomous Database Lite (Always Free - 1 ECPU + 20GB)
