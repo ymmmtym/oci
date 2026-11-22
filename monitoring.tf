@@ -33,10 +33,10 @@ resource "oci_monitoring_alarm" "instance_down" {
   destinations          = [oci_ons_notification_topic.alarm[0].id]
   metric_compartment_id = var.tenancy_ocid
   namespace             = "oci_computeagent"
-  query                 = format("CpuUtilization[1m]{resourceId = \"%s\"}.absent(5m)", oci_core_instance.micro[count.index].id)
+  query                 = format("CpuUtilization[1m]{resourceId = \"%s\"}.groupBy(resourceId).absent(3d)", oci_core_instance.micro[count.index].id)
   resolution            = "1m"
   severity              = "CRITICAL"
-  pending_duration      = "PT1M"
+  pending_duration      = "PT5M"
 
   message_format               = "ONS_OPTIMIZED"
   notification_title           = "[${oci_core_instance.micro[count.index].display_name}] メトリクスが届いていません"

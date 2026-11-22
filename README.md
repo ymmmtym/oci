@@ -96,10 +96,13 @@ terraform apply
 `jp-bastion-01` / `jp-bastion-02` それぞれについて、`oci_computeagent` の `CpuUtilization` が 5 分間まったく届かなくなったら `CRITICAL` で発報します。
 
 ```
-CpuUtilization[1m]{resourceId = "<instance OCID>"}.absent(5m)
+CpuUtilization[1m]{resourceId = "<instance OCID>"}.groupBy(resourceId).absent(3d)
 ```
 
-- `absent(5m)` は「メトリクスが 5 分間欠損」を意味します（`absent()` のデフォルトは 2 時間なので明示的に短縮）
+- `pending_duration = "PT5M"` が「5 分間継続したら発報」を担います
+- `absent(3d)` は absence detection period（メトリクスが欠損し続けたときに `absent()` が値を返し続ける上限）です。デフォルトは 2 時間で、`PT4H` の再通知より先に切れてアラームが `OK` に戻ってしまうため、指定可能な最大値の 3 日まで延ばしています
+- ただし absence detection period を過ぎると OCI 側のリセットで `OK` に戻り、通知も止まります。復旧まで通知し続ける保証はないため、長期停止が疑われる場合はコンソールでインスタンス状態を確認してください
+- `groupBy(resourceId)` は、OCI が新しいディメンションを追加したときに空のメトリクスストリームで誤発報するのを防ぎます
 - インスタンスを正常に停止した場合もメトリクスが止まるため発報します。計画停止のときはアラームを一時無効化してください
 - 通知は `PT4H` ごとに再送されます
 - `CpuUtilization` は Oracle Cloud Agent の **Compute Instance Monitoring** プラグインが出力します。プラグインが無効・停止しているとメトリクスが届かず常時発報になるため、コンソールの「Oracle Cloud Agent」タブで `RUNNING` になっているか確認してください
