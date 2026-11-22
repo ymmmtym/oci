@@ -218,6 +218,10 @@ resource "oci_core_instance" "micro" {
       })
     ]))
   }
+
+  lifecycle {
+    ignore_changes = [metadata["user_data"]]
+  }
 }
 
 output "instance_public_ips" {

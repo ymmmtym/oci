@@ -34,6 +34,8 @@ Managed via `mise` (`mise.toml`): `oci` and `terraform` (both `latest`).
 
 SSH key is hardcoded in `main.tf` (`oci_core_instance.micro` metadata). Update there to change.
 
+The provider's CustomizeDiff makes changes to `metadata["ssh_authorized_keys"]` and `metadata["user_data"]` ForceNew, so editing either recreates both instances. `ignore_changes = [metadata["user_data"]]` suppresses that for cloud-init only; the new `user_data` is applied when the instance is recreated for another reason. Do not widen it to `metadata` — that would also ignore `ssh_authorized_keys` changes.
+
 Instance FQDNs come from the VCN Resolver (`<hostname>.<subnet dns_label>.<vcn dns_label>.oraclevcn.com`). `dns_label` is ForceNew on both `oci_core_vcn` and `oci_core_subnet`, so changing it recreates the subnets and both instances.
 
 ## Workflow
