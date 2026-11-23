@@ -66,30 +66,63 @@ jp-bastion-01.public.vcn.oraclevcn.com
 
 ## 死活監視（OCI Monitoring）
 
-`monitoring.tf` で OCI Monitoring のアラームと Notifications のトピック・購読を管理します。Qiita の[手順](https://qiita.com/yosakata/items/da0fff6b96297b91078b)をそのまま Terraform 化したものです。
+`monitoring.tf` で OCI Monitoring のアラームと Notifications のトピック・購読を管理します。[Qiita の手順](https://qiita.com/yosakata/items/da0fff6b96297b91078b)をベースに、通知先をメールから webhook に変え、absence alarm のパラメータを調整しています。
 
 | コンソール操作 | Terraform リソース |
 |---|---|
 | トピック（通知先）の作成 | `oci_ons_notification_topic.alarm` |
-| メールアドレスの登録 | `oci_ons_subscription.alarm_email` |
+| webhook URL の登録 | `oci_ons_subscription.alarm_webhook` |
 | アラーム定義の作成 | `oci_monitoring_alarm.instance_down` |
 
 ### 有効化
 
-`alert_email` に通知先メールアドレスを設定すると、トピック・購読・アラームが作成されます。未設定（空文字）の場合は何も作られません。
+`alert_webhook_url` に通知先 URL を設定すると、トピック・購読・アラームが作成されます。未設定（空文字）の場合は何も作られません。購読プロトコルの既定は `SLACK`（Slack Incoming Webhook）です。
 
 ```hcl
 # .auto.tfvars
-alert_email = "you@example.com"
+alert_webhook_url = "https://hooks.slack.com/services/T000/B000/xxxx"
 ```
 
 ```bash
 terraform apply
 ```
 
-### メール購読の確認（手動）
+`SLACK` プロトコルでは、OCI がアラームを Slack 用のメッセージに整形して投稿します。タイトルは `Alarm: <type> | <severity> | <title> | <timestamp>` 形式でアラームへのリンク付きになり、`notification_title` に指定した文言がタイトル部分に入ります。
 
-`oci_ons_subscription` は作成直後 `PENDING` 状態です。指定したアドレスに届く確認メールの **Confirm subscription** をクリックするまで通知は配信されません。Terraform では代行できないため手動で対応してください。
+Slack Incoming Webhook の URL は `CUSTOM_HTTPS` では使えません。Slack はリクエストに `text` フィールドを要求し、OCI の購読確認リクエスト（`{"ConfirmationURL": "..."}`）を `no_text` で拒否するため、確認が完了せず購読が `PENDING` のまま残ります。Slack に送る場合は必ず `SLACK` を指定してください。
+
+### `CUSTOM_HTTPS` を使う場合
+
+Slack 以外（自前の HTTPS エンドポイントなど）に送る場合は `CUSTOM_HTTPS` を指定します。
+
+```hcl
+alert_webhook_url      = "https://user:pass@example.com/hooks/oci-alarm"
+alert_webhook_protocol = "CUSTOM_HTTPS"
+```
+
+エンドポイントは次の条件を満たす必要があります（[Oracle ドキュメント](https://docs.oracle.com/en-us/iaas/Content/Notification/Tasks/create-subscription-https.htm)）。
+
+- 公開 URL であること（プライベートネットワークの宛先は不可）
+- POST を受け付けること。Content-Type はアラーム通知が `text/plain; charset=UTF-8`、購読確認リクエストが `application/json` なので、両方受け付ける
+- TLS ハンドシェイクと応答開始が 5 秒以内（接続・読み取りタイムアウトは 5 秒固定）
+- 認証は Basic 認証のみ。`https://user:pass@host/path` の形で URL に埋め込む
+- 未認証のリクエストには `401` と `WWW-Authenticate: Basic` ヘッダを返す
+- クエリパラメータと、利用側が任意に追加するカスタムヘッダは使えない（`?token=...` 形式の URL は不可）
+
+URL に資格情報を埋める代わりに、リクエストの検証は OCI が付与するヘッダで行えます（[標準ヘッダメタデータ](https://docs.oracle.com/en-us/iaas/Content/Notification/Concepts/notificationoverview.htm)）。`X-OCI-NS-Signature` / `X-OCI-NS-Timestamp` / `X-OCI-NS-SignatureVersion` / `X-OCI-NS-SigningCertURL` が付くので、`SigningCertURL` から証明書を取得して署名を検証してください。
+
+### 購読の確認（手動）
+
+`oci_ons_subscription` は作成直後 `PENDING` 状態です。確認を完了するまでアラーム通知は配信されません。確認 URL の有効期限は 3 日で、Terraform では代行できません。
+
+**`CUSTOM_HTTPS` の場合**、Notifications はエンドポイントへ `application/json` の確認リクエストを POST します。確認リクエストへ 200 を返すだけでは `ACTIVE` になりません。次のどちらかから確認 URL を取り出し、その URL を開いて確定させてください。
+
+- リクエストヘッダ `X-OCI-NS-ConfirmationURL`
+- リクエストボディの `ConfirmationURL` キー
+
+**`SLACK` の場合**、Slack チャンネルに "To confirm the subscription" で始まる確認メッセージが届くので、その中のリンクを開きます。
+
+`PENDING` のまま期限が切れた場合は購読を作り直してください。
 
 ### アラームの条件
 
