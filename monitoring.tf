@@ -1,7 +1,7 @@
 # OCI Monitoring + Notifications によるコンピュート死活監視。
-# alert_email が空のときは何も作らない（メールアドレス未設定でも plan が通るようにする）。
+# alert_webhook_url が空のときは何も作らない（webhook 先未設定でも plan が通るようにする）。
 locals {
-  monitoring_enabled = var.alert_email != ""
+  monitoring_enabled = var.alert_webhook_url != ""
 }
 
 resource "oci_ons_notification_topic" "alarm" {
@@ -12,12 +12,12 @@ resource "oci_ons_notification_topic" "alarm" {
   freeform_tags  = local.tags
 }
 
-# 作成直後は PENDING。届いたメールの "Confirm subscription" を踏むまで通知は飛ばない。
-resource "oci_ons_subscription" "alarm_email" {
+# 作成直後は PENDING。エンドポイントへ届く確認リクエストに応答するまで通知は配信されない。
+resource "oci_ons_subscription" "alarm_webhook" {
   count          = local.monitoring_enabled ? 1 : 0
   compartment_id = var.tenancy_ocid
-  endpoint       = var.alert_email
-  protocol       = "EMAIL"
+  endpoint       = var.alert_webhook_url
+  protocol       = var.alert_webhook_protocol
   topic_id       = oci_ons_notification_topic.alarm[0].id
 }
 

@@ -66,30 +66,50 @@ jp-bastion-01.public.vcn.oraclevcn.com
 
 ## 死活監視（OCI Monitoring）
 
-`monitoring.tf` で OCI Monitoring のアラームと Notifications のトピック・購読を管理します。Qiita の[手順](https://qiita.com/yosakata/items/da0fff6b96297b91078b)をそのまま Terraform 化したものです。
+`monitoring.tf` で OCI Monitoring のアラームと Notifications のトピック・購読を管理します。[Qiita の手順](https://qiita.com/yosakata/items/da0fff6b96297b91078b)をベースに、通知先をメールから webhook に変え、absence alarm のパラメータを調整しています。
 
 | コンソール操作 | Terraform リソース |
 |---|---|
 | トピック（通知先）の作成 | `oci_ons_notification_topic.alarm` |
-| メールアドレスの登録 | `oci_ons_subscription.alarm_email` |
+| webhook URL の登録 | `oci_ons_subscription.alarm_webhook` |
 | アラーム定義の作成 | `oci_monitoring_alarm.instance_down` |
 
 ### 有効化
 
-`alert_email` に通知先メールアドレスを設定すると、トピック・購読・アラームが作成されます。未設定（空文字）の場合は何も作られません。
+`alert_webhook_url` に通知先 URL を設定すると、トピック・購読・アラームが作成されます。未設定（空文字）の場合は何も作られません。
 
 ```hcl
 # .auto.tfvars
-alert_email = "you@example.com"
+alert_webhook_url = "https://example.com/hooks/oci-alarm"
 ```
 
 ```bash
 terraform apply
 ```
 
-### メール購読の確認（手動）
+`alert_webhook_protocol` で購読プロトコルを選びます。既定は `CUSTOM_HTTPS`（汎用の HTTPS エンドポイント）で、Slack の Incoming Webhook に送る場合は `SLACK` を指定します。
 
-`oci_ons_subscription` は作成直後 `PENDING` 状態です。指定したアドレスに届く確認メールの **Confirm subscription** をクリックするまで通知は配信されません。Terraform では代行できないため手動で対応してください。
+```hcl
+alert_webhook_url      = "https://hooks.slack.com/services/T000/B000/xxxx"
+alert_webhook_protocol = "SLACK"
+```
+
+`CUSTOM_HTTPS` で使うエンドポイントは次の条件を満たす必要があります（[Oracle ドキュメント](https://docs.oracle.com/en-us/iaas/Content/Notification/Tasks/create-subscription-https.htm)）。
+
+- 公開 URL であること（プライベートネットワークの宛先は不可）
+- POST を受け付けること。Content-Type は `text/plain; charset=UTF-8`
+- TLS ハンドシェイクと応答開始が 5 秒以内（接続・読み取りタイムアウトは 5 秒固定）
+- 認証は Basic 認証のみ。`https://user:pass@host/path` の形で URL に埋め込む
+- クエリパラメータとカスタムヘッダは使えない（`?token=...` 形式や `X-Signature` の付与は不可）
+- 401 を返す場合は `WWW-Authenticate: Basic` ヘッダを付ける
+
+カスタムヘッダが付与できないため、HMAC 署名による改ざん検証はできません。Basic 認証の資格情報と送信元 IP で保護してください。
+
+### 購読の確認（手動）
+
+`oci_ons_subscription` は作成直後 `PENDING` 状態です。Notifications はエンドポイントへ確認リクエストを POST するので、受け側で応答して `ACTIVE` にしてください。確認 URL の有効期限は 3 日で、Terraform では代行できません。`PENDING` のまま期限が切れた場合は購読を作り直します。
+
+`SLACK` プロトコルの場合も同じで、Slack 側に確認リクエストが届きます。応答するまで通知は配信されません。
 
 ### アラームの条件
 

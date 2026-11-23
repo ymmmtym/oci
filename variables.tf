@@ -37,8 +37,20 @@ variable "ubuntu_image_ocid" {
   default     = "ocid1.image.oc1.ap-osaka-1.aaaaaaaaxjdpvxyc3i5lle36mhkbcamarv4tsu2vue3arafpjd5zroyogcmq" # Canonical-Ubuntu-26.04-Minimal-2026.11.05-0
 }
 
-variable "alert_email" {
-  description = "Alarm notifications の購読先メールアドレス。空の場合はアラーム・トピックを作成しない"
+variable "alert_webhook_url" {
+  description = "Alarm notifications の webhook 先 URL。空の場合はアラーム・トピック・購読を作成しない"
   type        = string
+  sensitive   = true
   default     = ""
+}
+
+variable "alert_webhook_protocol" {
+  description = "webhook の購読プロトコル。CUSTOM_HTTPS は汎用の HTTPS エンドポイント、SLACK は Slack Incoming Webhook"
+  type        = string
+  default     = "CUSTOM_HTTPS"
+
+  validation {
+    condition     = contains(["CUSTOM_HTTPS", "SLACK"], var.alert_webhook_protocol)
+    error_message = "alert_webhook_protocol には CUSTOM_HTTPS か SLACK を指定してください。"
+  }
 }
