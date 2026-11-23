@@ -38,7 +38,7 @@ resource "oci_monitoring_alarm" "instance_down" {
   severity              = "CRITICAL"
   pending_duration      = "PT5M"
 
-  message_format               = "ONS_OPTIMIZED"
+  # ONS_OPTIMIZED は Email 購読専用のため指定しない（Slack 向けは OCI 側が整形する）
   notification_title           = "[${oci_core_instance.micro[count.index].display_name}] メトリクスが届いていません"
   alarm_summary                = "インスタンスが停止しているか、Monitoring に到達できていません"
   body                         = "OCI コンソールでインスタンスの状態を確認し、必要なら起動してください。"

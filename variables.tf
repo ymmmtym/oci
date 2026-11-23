@@ -45,12 +45,12 @@ variable "alert_webhook_url" {
 }
 
 variable "alert_webhook_protocol" {
-  description = "webhook の購読プロトコル。CUSTOM_HTTPS は汎用の HTTPS エンドポイント、SLACK は Slack Incoming Webhook"
+  description = "webhook の購読プロトコル。SLACK は Slack Incoming Webhook、CUSTOM_HTTPS は自前で受ける汎用の HTTPS エンドポイント"
   type        = string
-  default     = "CUSTOM_HTTPS"
+  default     = "SLACK"
 
   validation {
     condition     = contains(["CUSTOM_HTTPS", "SLACK"], var.alert_webhook_protocol)
-    error_message = "alert_webhook_protocol には CUSTOM_HTTPS か SLACK を指定してください。"
+    error_message = "alert_webhook_protocol には SLACK か CUSTOM_HTTPS を指定してください。"
   }
 }

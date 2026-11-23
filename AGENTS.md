@@ -14,7 +14,7 @@ private_key  = "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\
 ```
 `private_key` must use `\n` escapes, not literal newlines. Env var fallback: `TF_VAR_tenancy_ocid`, `TF_VAR_user_ocid`, `TF_VAR_fingerprint`, `TF_VAR_region`, `TF_VAR_private_key`.
 
-Required vars: `tenancy_ocid`, `user_ocid`, `fingerprint`, `region` (default `ap-osaka-1`), `private_key`, `adb_admin_password`. Optional: `alert_webhook_url` (Monitoring alarm webhook destination; empty = no alarm resources) and `alert_webhook_protocol` (`CUSTOM_HTTPS` default, or `SLACK`).
+Required vars: `tenancy_ocid`, `user_ocid`, `fingerprint`, `region` (default `ap-osaka-1`), `private_key`, `adb_admin_password`. Optional: `alert_webhook_url` (Monitoring alarm webhook destination; empty = no alarm resources) and `alert_webhook_protocol` (`SLACK` default for Slack Incoming Webhooks, or `CUSTOM_HTTPS`).
 
 ## Tools
 

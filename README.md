@@ -76,25 +76,31 @@ jp-bastion-01.public.vcn.oraclevcn.com
 
 ### 有効化
 
-`alert_webhook_url` に通知先 URL を設定すると、トピック・購読・アラームが作成されます。未設定（空文字）の場合は何も作られません。
+`alert_webhook_url` に通知先 URL を設定すると、トピック・購読・アラームが作成されます。未設定（空文字）の場合は何も作られません。購読プロトコルの既定は `SLACK`（Slack Incoming Webhook）です。
 
 ```hcl
 # .auto.tfvars
-alert_webhook_url = "https://example.com/hooks/oci-alarm"
+alert_webhook_url = "https://hooks.slack.com/services/T000/B000/xxxx"
 ```
 
 ```bash
 terraform apply
 ```
 
-`alert_webhook_protocol` で購読プロトコルを選びます。既定は `CUSTOM_HTTPS`（汎用の HTTPS エンドポイント）で、Slack の Incoming Webhook に送る場合は `SLACK` を指定します。
+`SLACK` プロトコルでは、OCI がアラームを Slack 用のメッセージに整形して投稿します。タイトルは `Alarm: <type> | <severity> | <title> | <timestamp>` 形式でアラームへのリンク付きになり、`notification_title` に指定した文言がタイトル部分に入ります。
+
+Slack Incoming Webhook の URL は `CUSTOM_HTTPS` では使えません。Slack はリクエストに `text` フィールドを要求し、OCI の購読確認リクエスト（`{"ConfirmationURL": "..."}`）を `no_text` で拒否するため、確認が完了せず購読が `PENDING` のまま残ります。Slack に送る場合は必ず `SLACK` を指定してください。
+
+### `CUSTOM_HTTPS` を使う場合
+
+Slack 以外（自前の HTTPS エンドポイントなど）に送る場合は `CUSTOM_HTTPS` を指定します。
 
 ```hcl
-alert_webhook_url      = "https://hooks.slack.com/services/T000/B000/xxxx"
-alert_webhook_protocol = "SLACK"
+alert_webhook_url      = "https://user:pass@example.com/hooks/oci-alarm"
+alert_webhook_protocol = "CUSTOM_HTTPS"
 ```
 
-`CUSTOM_HTTPS` で使うエンドポイントは次の条件を満たす必要があります（[Oracle ドキュメント](https://docs.oracle.com/en-us/iaas/Content/Notification/Tasks/create-subscription-https.htm)）。
+エンドポイントは次の条件を満たす必要があります（[Oracle ドキュメント](https://docs.oracle.com/en-us/iaas/Content/Notification/Tasks/create-subscription-https.htm)）。
 
 - 公開 URL であること（プライベートネットワークの宛先は不可）
 - POST を受け付けること。Content-Type はアラーム通知が `text/plain; charset=UTF-8`、購読確認リクエストが `application/json` なので、両方受け付ける
