@@ -97,19 +97,26 @@ alert_webhook_protocol = "SLACK"
 `CUSTOM_HTTPS` で使うエンドポイントは次の条件を満たす必要があります（[Oracle ドキュメント](https://docs.oracle.com/en-us/iaas/Content/Notification/Tasks/create-subscription-https.htm)）。
 
 - 公開 URL であること（プライベートネットワークの宛先は不可）
-- POST を受け付けること。Content-Type は `text/plain; charset=UTF-8`
+- POST を受け付けること。Content-Type はアラーム通知が `text/plain; charset=UTF-8`、購読確認リクエストが `application/json` なので、両方受け付ける
 - TLS ハンドシェイクと応答開始が 5 秒以内（接続・読み取りタイムアウトは 5 秒固定）
 - 認証は Basic 認証のみ。`https://user:pass@host/path` の形で URL に埋め込む
-- クエリパラメータとカスタムヘッダは使えない（`?token=...` 形式や `X-Signature` の付与は不可）
-- 401 を返す場合は `WWW-Authenticate: Basic` ヘッダを付ける
+- 未認証のリクエストには `401` と `WWW-Authenticate: Basic` ヘッダを返す
+- クエリパラメータと、利用側が任意に追加するカスタムヘッダは使えない（`?token=...` 形式の URL は不可）
 
-カスタムヘッダが付与できないため、HMAC 署名による改ざん検証はできません。Basic 認証の資格情報と送信元 IP で保護してください。
+URL に資格情報を埋める代わりに、リクエストの検証は OCI が付与するヘッダで行えます（[標準ヘッダメタデータ](https://docs.oracle.com/en-us/iaas/Content/Notification/Concepts/notificationoverview.htm)）。`X-OCI-NS-Signature` / `X-OCI-NS-Timestamp` / `X-OCI-NS-SignatureVersion` / `X-OCI-NS-SigningCertURL` が付くので、`SigningCertURL` から証明書を取得して署名を検証してください。
 
 ### 購読の確認（手動）
 
-`oci_ons_subscription` は作成直後 `PENDING` 状態です。Notifications はエンドポイントへ確認リクエストを POST するので、受け側で応答して `ACTIVE` にしてください。確認 URL の有効期限は 3 日で、Terraform では代行できません。`PENDING` のまま期限が切れた場合は購読を作り直します。
+`oci_ons_subscription` は作成直後 `PENDING` 状態です。確認を完了するまでアラーム通知は配信されません。確認 URL の有効期限は 3 日で、Terraform では代行できません。
 
-`SLACK` プロトコルの場合も同じで、Slack 側に確認リクエストが届きます。応答するまで通知は配信されません。
+**`CUSTOM_HTTPS` の場合**、Notifications はエンドポイントへ `application/json` の確認リクエストを POST します。確認リクエストへ 200 を返すだけでは `ACTIVE` になりません。次のどちらかから確認 URL を取り出し、その URL を開いて確定させてください。
+
+- リクエストヘッダ `X-OCI-NS-ConfirmationURL`
+- リクエストボディの `ConfirmationURL` キー
+
+**`SLACK` の場合**、Slack チャンネルに "To confirm the subscription" で始まる確認メッセージが届くので、その中のリンクを開きます。
+
+`PENDING` のまま期限が切れた場合は購読を作り直してください。
 
 ### アラームの条件
 
