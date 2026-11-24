@@ -38,7 +38,7 @@ resource "oci_monitoring_alarm" "instance_down" {
   severity              = "CRITICAL"
   pending_duration      = "PT5M"
 
-  # ONS_OPTIMIZED を指定しないと RAW（生 JSON）がそのまま本文になる。Slack でも整形される
+  # 未指定だと既定の RAW になり、アラーム JSON がそのまま通知本文になる
   message_format               = "ONS_OPTIMIZED"
   notification_title           = "[${oci_core_instance.micro[count.index].display_name}] メトリクスが届いていません"
   alarm_summary                = "インスタンスが停止しているか、Monitoring に到達できていません"
