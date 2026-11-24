@@ -89,6 +89,8 @@ terraform apply
 
 `SLACK` プロトコルでは、OCI がアラームを Slack 用のメッセージに整形して投稿します。タイトルは `Alarm: <type> | <severity> | <title> | <timestamp>` 形式でアラームへのリンク付きになり、`notification_title` に指定した文言がタイトル部分に入ります。
 
+整形にはアラーム側の `message_format = "ONS_OPTIMIZED"` が必要です。指定しないと既定の `RAW` になり、アラーム JSON がそのまま本文として Slack に流れます。
+
 Slack Incoming Webhook の URL は `CUSTOM_HTTPS` では使えません。Slack はリクエストに `text` フィールドを要求し、OCI の購読確認リクエスト（`{"ConfirmationURL": "..."}`）を `no_text` で拒否するため、確認が完了せず購読が `PENDING` のまま残ります。Slack に送る場合は必ず `SLACK` を指定してください。
 
 ### `CUSTOM_HTTPS` を使う場合
