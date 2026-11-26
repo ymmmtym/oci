@@ -179,8 +179,9 @@ resource "oci_core_instance" "micro" {
   freeform_tags       = local.tags
 
   create_vnic_details {
-    subnet_id        = oci_core_subnet.public_subnet.id
-    assign_public_ip = true
+    subnet_id = oci_core_subnet.public_subnet.id
+    # 予約済みパブリック IP を oci_core_public_ip で割り当てるため、ephemeral IP は付けない
+    assign_public_ip = false
     hostname_label   = format("jp-bastion-%02d", count.index + 1)
   }
 
@@ -224,8 +225,20 @@ resource "oci_core_instance" "micro" {
   }
 }
 
+# 予約済みパブリック IP。インスタンスを再作成しても IP が変わらないようにする。
+# ephemeral IP は予約 IP に変換できないため、初回適用時に一度だけ IP が変わる。
+resource "oci_core_public_ip" "bastion" {
+  count          = length(oci_core_instance.micro)
+  compartment_id = var.tenancy_ocid
+  lifetime       = "RESERVED"
+  display_name   = format("jp-bastion-%02d-public-ip", count.index + 1)
+  freeform_tags  = local.tags
+
+  private_ip_id = oci_core_instance.micro[count.index].create_vnic_details[0].private_ip_id
+}
+
 output "instance_public_ips" {
-  value = oci_core_instance.micro[*].public_ip
+  value = oci_core_public_ip.bastion[*].ip_address
 }
 
 output "instance_fqdns" {
